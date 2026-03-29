@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chai Patram Cafe</title>
+  <meta name="description" content="Chai Patram Cafe — premium cafe showcase website with modern UI, gallery, map, and external ordering links." />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --panel: rgba(255,255,255,0.08);
+      --panel-strong: rgba(255,255,255,0.12);
+      --border: rgba(255,255,255,0.14);
+      --text: #f5f5f5;
+      --muted: #b8b8b8;
+      --accent: #ffb347;
+      --accent-2: #ff6b35;
+      --accent-3: #7c4dff;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(255, 179, 71, 0.16), transparent 30%),
+        radial-gradient(circle at top right, rgba(124, 77, 255, 0.16), transparent 30%),
+        linear-gradient(180deg, #0a0a0a 0%, #101010 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── LOADER ── */
+    #loader {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: #0a0a0a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.4rem;
+      transition: opacity 0.7s ease, visibility 0.7s ease;
+    }
+    #loader.hidden {
+      opacity: 0;
+      visibility: hidden;
+    }
+    .loader-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.2rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.02em;
+    }
+    .loader-ring {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: 3px solid rgba(255,255,255,0.08);
+      border-top-color: var(--accent);
+      border-right-color: var(--accent-2);
+      animation: spin 0.9s linear infinite;
+    }
+    .loader-dots {
+      display: flex;
+      gap: 8px;
+    }
+    .loader-dots span {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      opacity: 0.3;
+      animation: dotPulse 1.2s ease-in-out infinite;
+    }
+    .loader-dots span:nth-child(2) { animation-delay: 0.2s; background: var(--accent-2); }
+    .loader-dots span:nth-child(3) { animation-delay: 0.4s; background: var(--accent-3); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes dotPulse {
+      0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+      40% { opacity: 1; transform: scale(1.2); }
+    }
+
+    /* ── GLASS ── */
+    .glass {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+    }
+    .glass-strong {
+      background: var(--panel-strong);
+      border: 1px solid rgba(255,255,255,0.18);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.32);
+    }
+    .hero-gradient {
+      background: linear-gradient(135deg, rgba(255,179,71,0.22), rgba(255,107,53,0.12), rgba(124,77,255,0.18));
+    }
+
+    /* ── SHINE ── */
+    .shine { position: relative; overflow: hidden; }
+    .shine::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      transform: translateX(-120%);
+      background: linear-gradient(120deg, transparent, rgba(255,255,255,0.18), transparent);
+      transition: transform 0.7s ease;
+    }
+    .shine:hover::after { transform: translateX(120%); }
+
+    /* ── TYPOGRAPHY ── */
+    .section-title {
+      font-size: clamp(1.35rem, 3vw, 2rem);
+      line-height: 1.1;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+    .section-subtitle { color: var(--muted); max-width: 48rem; }
+
+    /* ── SCROLL REVEAL ── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* ── IMAGE CARD ── */
+    .image-card {
+      position: relative;
+      overflow: hidden;
+      border-radius: 24px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.03);
+    }
+    .image-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.5s ease;
+    }
+    .image-card:hover img { transform: scale(1.05); }
+
+    /* ── BADGE ── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.55rem 0.9rem;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: #f7f7f7;
+      font-size: 0.92rem;
+      font-weight: 600;
+    }
+
+    /* ── BUTTONS ── */
+    .btn-glass {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.7rem;
+      padding: 0.95rem 1.15rem;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.08);
+      color: white;
+      text-decoration: none;
+      font-weight: 700;
+      transition: transform 0.25s ease, background 0.25s ease, border-color 0.25s ease;
+    }
+    .btn-glass:hover {
+      transform: translateY(-2px);
+      background: rgba(255,255,255,0.12);
+      border-color: rgba(255,255,255,0.25);
+    }
+    .btn-accent {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #111;
+      border: none;
+      box-shadow: 0 10px 30px rgba(255, 107, 53, 0.25);
+    }
+    .btn-accent:hover { background: linear-gradient(135deg, #ffd28a, #ff7b49); }
+
+    /* ── MISC ── */
+    .muted-line {
+      height: 1px;
+      width: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.16), transparent);
+    }
+    .map-frame {
+      border-radius: 28px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.14);
+      min-height: 320px;
+      background: rgba(255,255,255,0.05);
+    }
+    .map-frame iframe { width: 100%; height: 100%; min-height: 320px; border: 0; }
+    .mini-card { transition: transform 0.25s ease, border-color 0.25s ease, background 0.25s ease; }
+    .mini-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(255,255,255,0.24);
+      background: rgba(255,255,255,0.1);
+    }
+
+    /* ── ANIMATED NAVBAR ── */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      background: rgba(10,10,10,0.55);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      transition: background 0.4s ease, padding 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+    }
+    .topbar.scrolled {
+      background: rgba(10,10,10,0.88);
+      border-color: rgba(255,255,255,0.14);
+      box-shadow: 0 6px 40px rgba(0,0,0,0.45);
+    }
+    .topbar.scrolled .nav-inner { padding-top: 0.6rem; padding-bottom: 0.6rem; }
+    .nav-inner { transition: padding 0.35s ease; }
+    .nav-links a {
+      color: rgba(255,255,255,0.65);
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      transition: color 0.2s ease;
+      position: relative;
+    }
+    .nav-links a::after {
+      content: '';
+      position: absolute;
+      bottom: -3px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      border-radius: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      transition: width 0.3s ease;
+    }
+    .nav-links a:hover { color: var(--text); }
+    .nav-links a:hover::after { width: 100%; }
+
+    /* ── 3D HOVER CARDS ── */
+    .card-3d-wrap {
+      perspective: 900px;
+    }
+    .card-3d {
+      transform-style: preserve-3d;
+      transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+      will-change: transform;
+      border-radius: 28px;
+      overflow: hidden;
+      cursor: default;
+    }
+    .card-3d:hover {
+      box-shadow: 0 30px 60px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.18);
+    }
+    .card-3d-inner {
+      pointer-events: none;
+      transform: translateZ(20px);
+    }
+    .card-3d-shine {
+      position: absolute;
+      inset: 0;
+      border-radius: 28px;
+      background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.12) 0%, transparent 70%);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .card-3d:hover .card-3d-shine { opacity: 1; }
+
+    /* ── REVIEW CARDS ── */
+    .review-strip {
+      display: flex;
+      gap: 1rem;
+      overflow-x: auto;
+      padding-bottom: 0.75rem;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,179,71,0.3) transparent;
+    }
+    .review-strip::-webkit-scrollbar { height: 4px; }
+    .review-strip::-webkit-scrollbar-track { background: transparent; }
+    .review-strip::-webkit-scrollbar-thumb { background: rgba(255,179,71,0.3); border-radius: 4px; }
+    .review-card {
+      flex: 0 0 280px;
+      scroll-snap-align: start;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px;
+      padding: 1.2rem 1.3rem;
+      backdrop-filter: blur(12px);
+      transition: transform 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+    }
+    .review-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(255,179,71,0.35);
+      background: rgba(255,255,255,0.09);
+    }
+    .review-stars { display: flex; gap: 2px; margin-bottom: 0.55rem; }
+    .review-stars span { color: var(--accent); font-size: 0.85rem; }
+    .review-name {
+      font-weight: 700;
+      font-size: 0.93rem;
+      color: #fff;
+      margin-bottom: 0.15rem;
+    }
+    .review-guide {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+      letter-spacing: 0.01em;
+    }
+    .review-text {
+      font-size: 0.84rem;
+      color: rgba(255,255,255,0.75);
+      line-height: 1.55;
+    }
+    .review-time {
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.35);
+      margin-top: 0.65rem;
+    }
+
+    /* ── SOCIAL LINKS ── */
+    .social-icon-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      padding: 0.75rem 1.1rem;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.85);
+      text-decoration: none;
+      font-size: 0.84rem;
+      font-weight: 600;
+      transition: transform 0.22s ease, background 0.22s ease, border-color 0.22s ease;
+    }
+    .social-icon-btn:hover {
+      transform: translateY(-2px);
+      background: rgba(255,255,255,0.11);
+      border-color: rgba(255,255,255,0.22);
+    }
+    .social-icon-btn.insta:hover { border-color: #e1306c; background: rgba(225,48,108,0.12); }
+    .social-icon-btn.whatsapp:hover { border-color: #25d366; background: rgba(37,211,102,0.12); }
+    .social-icon-btn.email:hover { border-color: #60a5fa; background: rgba(96,165,250,0.12); }
+    .social-icon-btn.zomato:hover { border-color: #e23744; background: rgba(226,55,68,0.12); }
+    .social-icon-btn.swiggy:hover { border-color: #fc8019; background: rgba(252,128,25,0.12); }
+    .social-icon-btn.maps:hover { border-color: #4ade80; background: rgba(74,222,128,0.12); }
+
+    .hero-image {
+      aspect-ratio: 1 / 1;
+      border-radius: 28px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.05);
+    }
+    .hero-image img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  </style>
+</head>
+<body>
+
+  <div id="loader">
+    <div class="loader-logo">☕ Chai Patram</div>
+    <div class="loader-ring"></div>
+    <div class="loader-dots">
+      <span></span><span></span><span></span>
+    </div>
+  </div>
+
+  <header class="topbar" id="topbar">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-4 nav-inner">
+      <div>
+        <p class="text-xs uppercase tracking-[0.24em] text-gray-400">Showcase Website</p>
+        <h1 class="text-lg md:text-xl font-extrabold tracking-tight">Chai Patram Cafe</h1>
+      </div>
+      <nav class="nav-links hidden md:flex items-center gap-6">
+        <a href="#highlights">Menu</a>
+        <a href="#gallery">Gallery</a>
+        <a href="#reviews">Reviews</a>
+        <a href="#contact">Contact</a>
+      </nav>
+      <a href="#contact" class="btn-glass hidden sm:inline-flex text-sm py-2 px-4">Visit Info</a>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 pb-16">
+
+    <section class="grid lg:grid-cols-2 gap-8 items-center pt-8 md:pt-14 reveal">
+      <div class="space-y-6">
+        <span class="badge">☕ Premium Cafe Showcase</span>
+        <div class="space-y-4">
+          <h2 class="text-4xl md:text-6xl font-black tracking-tight leading-[0.95]">
+            The taste of chai, snacks, and cafe moments — beautifully presented.
+          </h2>
+          <p class="text-gray-300 text-base md:text-lg max-w-2xl leading-7">
+            A clean, premium website concept for Chai Patram Cafe, designed like a big brand landing page.
+            Built for visual impact, smooth browsing, and quick access to location and external ordering platforms.
+          </p>
+        </div>
+        <div class="flex flex-wrap gap-3">
+          <a class="btn-glass btn-accent shine" href="https://www.zomato.com/bijapur/chai-patram-cafe-4-bijapur-locality/order" target="_blank" rel="noopener noreferrer">
+            🍽️ Order on Zomato
+          </a>
+          <a class="btn-glass shine" href="https://www.swiggy.com/city/bijapur/chai-pathram-cafe-jalanagar-khwaja-nagar-rest722992?utm_source=GooglePlaceOrder&utm_campaign=GoogleMap&is_retargeting=true&media_source=GooglePlaceOrder" target="_blank" rel="noopener noreferrer">
+            🛵 Order on Swiggy
+          </a>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2">
+          <div class="glass rounded-2xl p-4 mini-card"><p class="text-xs uppercase tracking-[0.18em] text-gray-400">Vibe</p><p class="mt-1 font-bold">Warm & Modern</p></div>
+          <div class="glass rounded-2xl p-4 mini-card"><p class="text-xs uppercase tracking-[0.18em] text-gray-400">Focus</p><p class="mt-1 font-bold">Showcase Only</p></div>
+          <div class="glass rounded-2xl p-4 mini-card"><p class="text-xs uppercase tracking-[0.18em] text-gray-400">Layout</p><p class="mt-1 font-bold">Mobile First</p></div>
+          <div class="glass rounded-2xl p-4 mini-card"><p class="text-xs uppercase tracking-[0.18em] text-gray-400">Style</p><p class="mt-1 font-bold">Premium Brand</p></div>
+        </div>
+      </div>
+      <div class="hero-image hero-gradient shadow-2xl shadow-black/30 reveal">
+        <img src="images/hero.jpg" alt="Chai Patram Cafe hero image" />
+      </div>
+    </section>
+
+    <section class="mt-14 md:mt-20 reveal" id="highlights">
+      <div class="flex items-end justify-between gap-4 mb-6">
+        <div>
+          <h3 class="section-title">Featured Highlights</h3>
+          <p class="section-subtitle mt-2">Use your best images here. Hover over the cards for a 3D effect.</p>
+        </div>
+      </div>
+      <div class="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
+
+        <div class="card-3d-wrap">
+          <article class="glass card-3d" style="position:relative;">
+            <div class="card-3d-shine"></div>
+            <div class="image-card aspect-[4/3]">
+              <img src="images/item1.jpg" alt="Featured item 1" />
+            </div>
+            <div class="p-5 card-3d-inner" style="transform:none;">
+              <h4 class="text-xl font-bold">Signature Special</h4>
+              <p class="text-gray-300 mt-2 leading-6">A premium highlight card for your best-selling item or most attractive dish.</p>
+            </div>
+          </article>
+        </div>
+
+        <div class="card-3d-wrap">
+          <article class="glass card-3d" style="position:relative;">
+            <div class="card-3d-shine"></div>
+            <div class="image-card aspect-[4/3]">
+              <img src="images/item2.jpg" alt="Featured item 2" />
+            </div>
+            <div class="p-5">
+              <h4 class="text-xl font-bold">Cafe Favourite</h4>
+              <p class="text-gray-300 mt-2 leading-6">Use this slot for any food or drink image that represents the cafe vibe well.</p>
+            </div>
+          </article>
+        </div>
+
+        <div class="card-3d-wrap md:col-span-2 xl:col-span-1">
+          <article class="glass card-3d" style="position:relative;">
+            <div class="card-3d-shine"></div>
+            <div class="image-card aspect-[4/3]">
+              <img src="images/item3.jpg" alt="Featured item 3" />
+            </div>
+            <div class="p-5">
+              <h4 class="text-xl font-bold">Fresh & Cool</h4>
+              <p class="text-gray-300 mt-2 leading-6">This one works nicely for any drink shot, dessert, or close-up food image.</p>
+            </div>
+          </article>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="mt-14 md:mt-20 reveal" id="gallery">
+      <div class="flex items-end justify-between gap-4 mb-6">
+        <div>
+          <h3 class="section-title">Gallery</h3>
+          <p class="section-subtitle mt-2">Five slots are left open so you can simply change the image paths later.</p>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="image-card aspect-[1/1]"><img src="images/gallery1.jpg" alt="Gallery image 1" /></div>
+        <div class="image-card aspect-[1/1]"><img src="images/gallery2.jpg" alt="Gallery image 2" /></div>
+        <div class="image-card aspect-[1/1]"><img src="images/gallery3.jpg" alt="Gallery image 3" /></div>
+        <div class="image-card aspect-[1/1]"><img src="images/gallery4.jpg" alt="Gallery image 4" /></div>
+        <div class="image-card aspect-[1/1] lg:col-span-2"><img src="images/gallery5.jpg" alt="Gallery image 5" /></div>
+      </div>
+    </section>
+
+    <section class="mt-14 md:mt-20 reveal" id="reviews">
+      <div class="mb-6">
+        <h3 class="section-title">What People Say</h3>
+        <p class="section-subtitle mt-2">Real reviews from Google — scroll to see more.</p>
+      </div>
+      <div class="review-strip">
+
+        <div class="review-card">
+          <div class="review-stars"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>
+          <p class="review-name">Ameer Korti</p>
+          <p class="review-guide">Local Guide · 26 reviews · 257 photos</p>
+          <p class="review-text">🌿 This Café is one of the best spots in Vijayapur to relax & enjoy a perfect coffee or tea break. The ambiance is absolutely beautiful — calm music, creative interiors, and a vibe that makes you want to stay longer.</p>
+          <p class="review-time">5 months ago</p>
+        </div>
+
+        <div class="review-card">
+          <div class="review-stars"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>
+          <p class="review-name">Rakesh Patil</p>
+          <p class="review-guide">Local Guide · 68 reviews · 112 photos</p>
+          <p class="review-text">Chai Patram is a cozy spot with a cool vibe and friendly staff. The sandwich & classic chai — both were delicious and budget-friendly. Great place to hang out. Will visit again!</p>
+          <p class="review-time">11 months ago</p>
+        </div>
+
+        <div class="review-card">
+          <div class="review-stars"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>
+          <p class="review-name">Varun Art</p>
+          <p class="review-guide">4 reviews · 2 photos</p>
+          <p class="review-text">It was really delicious taste with great quality. And nice service. We enjoyed every bit of it — food was fresh and the portions were just right. Food: 5/5</p>
+          <p class="review-time">2 years ago</p>
+        </div>
+
+        <div class="review-card">
+          <div class="review-stars"><span>★</span><span>★</span><span>★</span><span>★</span><span style="color:rgba(255,179,71,0.3)">★</span></div>
+          <p class="review-name">Mainuddin Tikondi</p>
+          <p class="review-guide">Local Guide · 29 reviews · 3 photos</p>
+          <p class="review-text">It is a cafe where the seating is good but it's a small cafe — they have limited space. Still a nice spot with a relaxed vibe.</p>
+          <p class="review-time">3 months ago</p>
+        </div>
+
+        <div class="review-card">
+          <div class="review-stars"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>
+          <p class="review-name">Shrishail Mulawad</p>
+          <p class="review-guide">Local Guide · 149 reviews · 152 photos</p>
+          <p class="review-text">Cafe interior is good, a nice place to sit and sip your hot beverages. Sandwich, pizza and burgers are average. Other snacks are good. Staff and service are great.</p>
+          <p class="review-time">9 months ago</p>
+        </div>
+
+        <div class="review-card">
+          <div class="review-stars"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>
+          <p class="review-name">Vinayak</p>
+          <p class="review-guide">4 reviews</p>
+          <p class="review-text">Family friends yallargi karkond barri — exquisite taste and awesome people. Dine in experience was wonderful. Highly recommend visiting with family!</p>
+          <p class="review-time">2 years ago</p>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="mt-14 md:mt-20 grid lg:grid-cols-[1.1fr_0.9fr] gap-6 reveal" id="contact">
+      <div class="glass rounded-[28px] p-6 md:p-8">
+        <h3 class="section-title">Location</h3>
+        <p class="section-subtitle mt-2">Shop No. 16, Sangolli Rayanna Complex, Jalnagar Main Rd, Vijayapura</p>
+        <div class="mt-6 map-frame">
+          <iframe
+            title="Chai Patram Cafe Google Map"
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            src="https://www.google.com/maps?q=Chai+Patram+Cafe+Bijapur&output=embed">
+          </iframe>
+        </div>
+        <div class="mt-4 flex flex-wrap gap-3">
+          <a href="https://www.google.com/maps/place/Chai+Patram+Cafe,+Shop+No.+16,+Sangolli+Rayanna+Complex,+Jalnagar+Main+Road,+Jalanagar,+KK+Colony,+Vijayapura,+Karnataka+586109/data=!4m2!3m1!1s0x3bc655bed6c82f4b:0x987f31a882285db?utm_source=mstt_1&entry=gps" target="_blank" rel="noopener noreferrer" class="social-icon-btn maps">
+            📍 Open in Google Maps
+          </a>
+        </div>
+      </div>
+
+      <div class="space-y-6">
+        <div class="glass rounded-[28px] p-6 md:p-8">
+          <h3 class="section-title">About the Brand</h3>
+          <p class="text-gray-300 mt-3 leading-7">
+            Chai Patram Cafe is a cozy, premium cafe in Vijayapura. Great vibes, quality chai, snacks, and an ambiance that keeps you coming back.
+          </p>
+        </div>
+
+        <div class="glass rounded-[28px] p-6 md:p-8">
+          <h3 class="section-title">Order Online</h3>
+          <div class="mt-4 grid grid-cols-2 gap-3">
+            <a class="social-icon-btn zomato" href="https://www.zomato.com/bijapur/chai-patram-cafe-4-bijapur-locality/order" target="_blank" rel="noopener noreferrer">
+              🍽️ Zomato
+            </a>
+            <a class="social-icon-btn swiggy" href="https://www.swiggy.com/city/bijapur/chai-pathram-cafe-jalanagar-khwaja-nagar-rest722992?utm_source=GooglePlaceOrder&utm_campaign=GoogleMap&is_retargeting=true&media_source=GooglePlaceOrder" target="_blank" rel="noopener noreferrer">
+              🛵 Swiggy
+            </a>
+          </div>
+        </div>
+
+        <div class="glass rounded-[28px] p-6 md:p-8">
+          <h3 class="section-title">Connect With Us</h3>
+          <div class="mt-4 flex flex-col gap-3">
+            <a class="social-icon-btn insta" href="https://www.instagram.com/chai_patram_cafe?igsh=Y3VrNTExY3dmNXdq" target="_blank" rel="noopener noreferrer">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+              Instagram — @chai_patram_cafe
+            </a>
+            <a class="social-icon-btn whatsapp" href="https://api.whatsapp.com/send/?phone=%2B917411046178&text&type=phone_number&app_absent=0" target="_blank" rel="noopener noreferrer">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+              WhatsApp — +91 74110 46178
+            </a>
+            <a class="social-icon-btn email" href="mailto:shantaveermulawad80@gmail.com">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              shantaveermulawad80@gmail.com
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="border-t border-white/10 bg-black/20">
+    <div class="max-w-7xl mx-auto px-4 py-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-sm text-gray-400">
+      <div>
+        <p class="font-bold text-white text-base">Chai Patram Cafe</p>
+        <p class="mt-1">Shop No. 16, Sangolli Rayanna Complex, Vijayapura, Karnataka 586109</p>
+      </div>
+      <div class="flex gap-4 flex-wrap">
+        <a href="https://www.instagram.com/chai_patram_cafe?igsh=Y3VrNTExY3dmNXdq" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors">Instagram</a>
+        <a href="https://www.zomato.com/bijapur/chai-patram-cafe-4-bijapur-locality/order" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors">Zomato</a>
+        <a href="https://www.swiggy.com/city/bijapur/chai-pathram-cafe-jalanagar-khwaja-nagar-rest722992?utm_source=GooglePlaceOrder&utm_campaign=GoogleMap&is_retargeting=true&media_source=GooglePlaceOrder" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors">Swiggy</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    /* ── BULLETPROOF LOADER ── */
+    function hideLoader() {
+      const loader = document.getElementById('loader');
+      if (loader && !loader.classList.contains('hidden')) {
+        loader.classList.add('hidden');
+        setTimeout(() => { loader.style.display = 'none'; }, 500);
+      }
+    }
+
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      setTimeout(hideLoader, 500);
+    } else {
+      document.addEventListener('DOMContentLoaded', () => setTimeout(hideLoader, 500));
+      window.addEventListener('load', () => setTimeout(hideLoader, 500));
+    }
+
+    // ULTIMATE FAILSAFE: Forces the website to show after 1.5 seconds NO MATTER WHAT.
+    setTimeout(hideLoader, 1500);
+
+    /* ── Scroll reveal ── */
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) entry.target.classList.add('visible');
+      });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
+
+    /* ── Animated navbar on scroll ── */
+    const topbar = document.getElementById('topbar');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 40) {
+        topbar.classList.add('scrolled');
+      } else {
+        topbar.classList.remove('scrolled');
+      }
+    });
+
+    /* ── 3D tilt cards ── */
+    document.querySelectorAll('.card-3d').forEach(card => {
+      const wrap = card.closest('.card-3d-wrap');
+      const shine = card.querySelector('.card-3d-shine');
+
+      wrap.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const cx = rect.width / 2;
+        const cy = rect.height / 2;
+        const rotX = ((y - cy) / cy) * -10;
+        const rotY = ((x - cx) / cx) * 10;
+        card.style.transform = `perspective(900px) rotateX(${rotX}deg) rotateY(${rotY}deg) scale3d(1.025,1.025,1.025)`;
+        if (shine) {
+          const px = (x / rect.width) * 100;
+          const py = (y / rect.height) * 100;
+          shine.style.background = `radial-gradient(circle at ${px}% ${py}%, rgba(255,255,255,0.14) 0%, transparent 65%)`;
+          shine.style.opacity = '1';
+        }
+      });
+
+      wrap.addEventListener('mouseleave', () => {
+        card.style.transform = 'perspective(900px) rotateX(0deg) rotateY(0deg) scale3d(1,1,1)';
+        if (shine) shine.style.opacity = '0';
+      });
+    });
+  </script>
+</body>
+</html>
